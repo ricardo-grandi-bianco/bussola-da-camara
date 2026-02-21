@@ -1,0 +1,191 @@
+/* --- 1. IMPORTAÇÃO DA FONTE MONTSERRAT --- */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap');
+
+/* --- 2. VARIÁVEIS DA IDENTIDADE VISUAL --- */
+:root {
+    /* Azul Marinho Profundo (Baseado na Logo) */
+    --primary-navy: #1B3B5A; 
+    /* Azul Secundário/Metálico */
+    --secondary-grey: #5D7385;
+    /* Um cinza bem clarinho para fundos de destaque */
+    --light-bg: #F8F9FA;
+    /* Vermelho para destaques negativos (opcional) */
+    --accent-red: #D9534F;
+}
+
+/* --- 3. RESET GERAL E TIPOGRAFIA --- */
+body, h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+    font-family: 'Source Sans Pro', sans-serif !important;
+}
+
+/* Deixa os títulos mais pesados (Bold) conforme sua logo */
+h1, h2, h3 {
+    font-weight: 700;
+    color: var(--primary-navy);
+}
+
+/* Texto de corpo mais leve para leitura agradável */
+p, span, label, div {
+    font-weight: 400;
+    color: #333;
+}
+
+/* --- CUSTOMIZAÇÃO DA NAVBAR (CORRIGIDA) --- */
+.navbar {
+    background-color: var(--primary-navy) !important;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    padding-top: 0.5rem !important;    /* Volta a ser mais fina */
+    padding-bottom: 0.5rem !important;
+}
+
+/* Texto da Marca (Canto esquerdo superior) */
+.navbar-brand {
+    color: #FFFFFF !important;
+    font-weight: 700;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Links do Menu (HOME, METODOLOGIA...) */
+.navbar-nav .nav-link {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-weight: 600;
+    text-transform: uppercase !important; /* Força Caixa Alta */
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+    margin-left: 10px;
+}
+
+.navbar-nav .nav-link:hover {
+    color: #FFFFFF !important;
+    opacity: 1;
+}
+
+.navbar-nav .nav-link.active {
+    color: #FFFFFF !important;
+    border-bottom: 2px solid var(--secondary-grey); /* Detalhe sutil no ativo */
+}
+
+/* --- 6. ESTILIZAÇÃO DOS CARDS (Filtros e Info) --- */
+.card {
+    border: none !important; /* Remove borda dura do Bootstrap */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08); /* Sombra elegante */
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background-color: white !important;
+    border-bottom: 2px solid var(--light-bg);
+    font-weight: 700;
+    color: var(--primary-navy);
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+}
+
+/* --- 7. AJUSTES DO GRÁFICO --- */
+/* Garante que o container do gráfico não tenha bordas estranhas */
+.dash-graph {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* --- 8. AJUSTE MOBILE --- */
+/* Se a tela for pequena, dá um respiro entre as colunas */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+}
+
+/* --- 9. AJUSTES FINAIS DO PLOTLY (CURSOR) --- */
+
+/* Força o cursor padrão (seta) em vez da cruz de arrastar */
+.js-plotly-plot .plotly .cursor-move,
+.js-plotly-plot .plotly .cursor-crosshair, 
+.js-plotly-plot .plotly .drag {
+    cursor: default !important; 
+}
+
+/* Opcional: Se preferir a "mãozinha" quando estiver arrastando */
+.js-plotly-plot .plotly .drag:active {
+    cursor: grabbing !important;
+}
+
+/* --- 10. AJUSTES DE TEXTO (PÁGINAS) --- */
+
+/* Aplica estilo uniforme para parágrafos (p) e listas (li) dentro do markdown */
+.markdown-texto p, 
+.markdown-texto ul li, 
+.markdown-texto ol li {
+    font-size: 1.25rem !important; /* Aumenta a fonte (tamanho similar ao 'lead') */
+    font-weight: 400;              /* Peso normal (não negrito, não fino demais) */
+    color: #212529 !important;     /* Cor preta padrão do Bootstrap (quase preto absoluto) */
+    line-height: 1.6;              /* Espaçamento entre linhas confortável */
+    margin-bottom: 1rem;           /* Espaço entre parágrafos */
+}
+
+/* Garante que as bolinhas da lista acompanhem o tamanho */
+.markdown-texto ul, .markdown-texto ol {
+    padding-left: 2rem;            /* Identação da lista */
+}
+
+.markdown-texto li {
+    margin-bottom: 0.5rem;         /* Espaço entre itens da lista */
+}
+
+/* --- 11. ANIMAÇÕES --- */
+
+/* Definição da Animação de Entrada Suave */
+@keyframes fadeInSlide {
+    from {
+        opacity: 0;
+        transform: translateY(20px); /* Começa 20px abaixo */
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);    /* Termina na posição original */
+    }
+}
+
+/* Classe para aplicar nos elementos (Use className="fade-in" no Python) */
+.fade-in {
+    animation: fadeInSlide 0.6s ease-out forwards;
+}
+
+/* ANIMAÇÃO DA NAVBAR (Efeito de traço correndo) */
+.navbar-nav .nav-link {
+    position: relative;
+    padding-bottom: 5px;
+}
+
+/* Cria o traço invisível inicialmente */
+.navbar-nav .nav-link::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: var(--secondary-grey); /* Cor do traço */
+    transition: width 0.3s ease-in-out;
+}
+
+/* Quando passa o mouse, o traço cresce */
+.navbar-nav .nav-link:hover::after {
+    width: 100%;
+}
+
+/* Quando está ativo (via callback), o traço fica fixo */
+.navbar-nav .nav-link.active::after {
+    width: 100%;
+    background-color: #FFFFFF; /* Traço branco para o ativo */
+}
+
+/* Remove a borda padrão antiga para usar a nossa animada */
+.navbar-nav .nav-link.active {
+    border-bottom: none !important; 
+}

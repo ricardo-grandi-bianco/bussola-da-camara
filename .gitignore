@@ -1,0 +1,23 @@
+# 1. Arquivos de cache do Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# 2. Ambientes virtuais e dependências locais
+.venv/
+venv/
+env/
+Lib/
+Scripts/
+
+# 3. Arquivos de configuração do VSCode
+.vscode/
+
+# 4. Arquivos de Sistema Operacional
+.DS_Store
+Thumbs.db
+
+# 5. Dados Intermediários (Opcional)
+# ignorad a pasta data/processed para poupar espaço no repositório, já que esses arquivos podem ser recriados/sobrescritos rodando os scripts de ETL.
+data/processed/
