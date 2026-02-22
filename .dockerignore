@@ -1,0 +1,22 @@
+# Ambientes virtuais (O contêiner terá o seu próprio Python, não precisa do local)
+.venv/
+venv/
+env/
+
+# Arquivos de controle do Git (Economiza muito espaço)
+.git/
+.gitignore
+
+# Arquivos de configuração de editores
+.vscode/
+
+# Caches do Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Dados pesados ou intermediários que não são usados pelo app final
+data/processed/
+
+# Variáveis de ambiente locais (Fundamental para segurança, caso crie um arquivo .env no futuro)
+.env
