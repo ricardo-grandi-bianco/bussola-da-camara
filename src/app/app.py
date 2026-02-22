@@ -8,7 +8,7 @@ from dash.dependencies import Input, Output
 from pathlib import Path
 
 # Importação das páginas
-from pages import home, como_funciona, descobertas, metodologia, quem_somos
+from src.app.pages import home, como_funciona, descobertas, metodologia, quem_somos
 
 # Configuração de caminhos
 BASE_DIR = Path(__file__).parent
