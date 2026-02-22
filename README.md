@@ -24,7 +24,7 @@ A posição de um deputado nos eixos x (Economia) e y (Costumes/Outros temas) n�
 A premissa estatística e política é de que votar acompanhando a grande maioria exige menos convicção ideológica do que proferir um voto minoritário. Portanto, o peso absoluto de um voto em determinada pauta é inversamente proporcional à adesão da Casa àquele posicionamento.
 
 A fórmula base aplicada é:
-$$Peso=(1-Proporcao_do_Voto)\times10$$
+$$Peso=(1- w)\times10$$, em que $$w$$ é a proporção de votos em determinada direção.
 
 Exemplo prático: em uma votação classificada como "Esquerda", se 90% do quórum vota "Sim" e 10% vota "Não":
 * o voto "Sim" (consenso) recebe peso absoluto leve: (1 - 0.90) x 10 = 1. O deputado move-se suavemente para a esquerda (-1);
