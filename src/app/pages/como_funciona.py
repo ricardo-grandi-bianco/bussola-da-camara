@@ -30,7 +30,7 @@ Cada ponto no gráfico representa um deputado. A localização é definida por u
 
 ### O que significam as cores?
 
-As cores padrão dividem os deputados em **7 grupos distintos**, gerados por um modelo matemático (para mais informações, veja a página "Metodologia").
+As cores padrão dividem os deputados em **7 grupos distintos**, gerados por um modelo matemático (para mais informações, veja as páginas *Descobertas* e *Metodologia*).
 
 Se preferir, você pode visualizar as cores por partido ou federação, selecionando a opção **Colorir por: Partidos** no menu lateral.
 
@@ -50,6 +50,10 @@ A ferramenta é interativa e permite análise detalhada:
 * **Lupa (canto superior direito):** clique neste ícone para selecionar com o mouse uma área específica do gráfico que você deseja ampliar.
 * **Casinha (canto superior direito):** ajusta a tela automaticamente para retornar ao zoom original.
 * **Limpar Filtros:** botão essencial para "resetar" a Bússola. Ele remove todas as seleções de busca, restaurando o gráfico ao estado padrão, em que aparecem todos os deputados avaliados.
+                         
+### Experiência de navegação
+                         
+Para que você tenha a melhor experiência de navegação na Bússola da Câmara, recomendamos abrir o site no computador. Se utilizar o celular, os filtros funcionam melhor com o apareho na vertical. Já para a visualização do gráfico, o ideal é utilizá-lo na horizontal. 
             ''', className="markdown-texto", link_target="_blank")
 
         ], width=12, lg=8)

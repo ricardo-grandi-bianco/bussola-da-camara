@@ -66,12 +66,16 @@ MAPA_FEDERACOES = {
 
 # Tratamento inicial dos dados
 if not df.empty:
-    df['label_busca'] = df['deputado_nome'] + ' (' + df['deputado_siglaPartido'] + '-' + df['deputado_siglaUf'] + ')'
     df['cluster'] = df['cluster'].astype(str)
-
-    # Correção de cor do União Brasil
     df['deputado_siglaPartido'] = df['deputado_siglaPartido'].astype(str).str.strip()
-    df.loc[df['deputado_siglaPartido'].str.contains('UNI', na=False), 'deputado_siglaPartido'] = 'UNIAO'
+    df['deputado_siglaPartido'] = df['deputado_siglaPartido'].apply(lambda x: 'UNIAO' if 'UNI' in x else x)
+    mudancas_partido = {
+        'Tiririca': 'PSD',
+        'Luiz Lima': 'NOVO'
+    }
+    for deputado, novo_partido in mudancas_partido.items():
+        df.loc[df['deputado_nome'] == deputado, 'deputado_siglaPartido'] = novo_partido
+    df['label_busca'] = df['deputado_nome'] + ' (' + df['deputado_siglaPartido'] + '-' + df['deputado_siglaUf'] + ')'
 
 # Geração de listas para os filtros
 lista_deputados = df[['deputado_id', 'label_busca']].sort_values('label_busca').to_dict('records')
@@ -80,6 +84,8 @@ lista_estados = sorted(df['deputado_siglaUf'].unique())
 
 # Layout
 layout = dbc.Row([
+    dcc.Store(id='browser-size', data={'width': 1200, 'height': 800}),
+    html.Button(id='btn-resize-fantasma', style={'display': 'none'}), # O nosso espião de rotação!
     # Coluna Esquerda: Filtros e Card
     dbc.Col([
         dbc.Card([
@@ -125,7 +131,7 @@ layout = dbc.Row([
             dbc.CardBody([
                 dcc.Graph(
                     id='grafico-principal',
-                    style={'height': '85vh'},
+                    style={'height': '85vh', 'minHeight': '550px'},
                     config={'displayModeBar': True, 'scrollZoom': True, 'doubleClick': 'reset'},
                     clear_on_unhover=True
                 )
@@ -133,6 +139,24 @@ layout = dbc.Row([
         ], className="shadow-sm h-100")
     ], width=12, lg=9)
 ])
+
+# Lógica de tela PC vs. Mobile
+dash.clientside_callback(
+    """
+    function(id_trigger, n_clicks) {
+        if (!window.monitor_de_rotacao) {
+            window.addEventListener('resize', function() {
+                var btn = document.getElementById('btn-resize-fantasma');
+                if (btn) { btn.click(); }
+            });
+            window.monitor_de_rotacao = true;
+        }
+        return {width: window.innerWidth, height: window.innerHeight};
+    }
+    """,
+    Output('browser-size', 'data'),
+    [Input('browser-size', 'id'), Input('btn-resize-fantasma', 'n_clicks')]
+)
 
 # Callbacks
 @callback(
@@ -146,20 +170,39 @@ layout = dbc.Row([
      Input('dropdown-partido', 'value'),
      Input('dropdown-estado', 'value'),
      Input('grafico-principal', 'clickData'),
-     Input('btn-reset', 'n_clicks')]
+     Input('btn-reset', 'n_clicks'),
+     Input('browser-size', 'data')]
 )
-def update_dashboard(color_mode, dep_selecionado, partido_selecionado, estado_selecionado, click_data, n_reset):
+def update_dashboard(color_mode, dep_selecionado, partido_selecionado, estado_selecionado, click_data, n_reset, browser_data):
     ctx = dash.callback_context
     trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
+    # Responsividade da tela
+    largura_tela = browser_data.get('width', 1200) if browser_data else 1200
+    
+    if largura_tela < 600:
+        fator_tamanho = 0.6  
+        fonte_legenda = 9
+        fonte_anotacoes = 10  
+        travar_quadrado = True
+    elif largura_tela < 992:
+        fator_tamanho = 0.75 
+        fonte_legenda = 10
+        fonte_anotacoes = 12
+        travar_quadrado = False
+    else:
+        fator_tamanho = 1.0   
+        fonte_legenda = 11
+        fonte_anotacoes = 14
+        travar_quadrado = False
+
     # Lógica de Reset
     if trigger_id == 'btn-reset':
-    
         dep_selecionado = None
         partido_selecionado = None
         estado_selecionado = None
 
-    # Seleção via clique no gráfico
+    # Seleção via clique
     if trigger_id == 'grafico-principal' and click_data:
         dep_selecionado = click_data['points'][0]['customdata'][0]
     
@@ -173,28 +216,21 @@ def update_dashboard(color_mode, dep_selecionado, partido_selecionado, estado_se
 
     if color_mode == 'partido':
         dff['legenda'] = dff['deputado_siglaPartido'].replace(MAPA_FEDERACOES)
-        
         cores_mapa = CORES_PARTIDO.copy()
-        cores_mapa.update({
-            'PT/PV/PCdoB': CORES_PARTIDO['PT'],
-            'PSOL/REDE': CORES_PARTIDO['PSOL'],
-            'PSDB/CIDADANIA': CORES_PARTIDO['PSDB'],
-            'PRD/SOLIDARIEDADE': CORES_PARTIDO['PRD']
-        })
-        
+        cores_mapa.update({'PT/PV/PCdoB': CORES_PARTIDO['PT'], 'PSOL/REDE': CORES_PARTIDO['PSOL'], 'PSDB/CIDADANIA': CORES_PARTIDO['PSDB'], 'PRD/SOLIDARIEDADE': CORES_PARTIDO['PRD']})
         dff['cor_final'] = dff['deputado_siglaPartido'].map(CORES_PARTIDO).fillna(COR_PARTIDO_DEFAULT)
     else:
         dff['cor_final'] = dff['cluster'].map(CORES_CLUSTER)
         dff['legenda'] = dff['cluster'].map(NOMES_CLUSTER)
         cores_mapa = {v: CORES_CLUSTER[k] for k, v in NOMES_CLUSTER.items()}
 
+    # Ajuste dos pontos
     dff['opacity'] = 0.9
-    dff['size'] = 9
-    dff['line_width'] = 1
+    dff['size'] = 9 * fator_tamanho          
+    dff['line_width'] = 1 * fator_tamanho    
     dff['line_color'] = 'DarkSlateGrey'
     
-   # Lógica da logo vs. card
-    
+    # Card
     card_content = html.Div([
         html.Div([
             html.Img(src="/assets/Logo.jpeg", style={'width': '80%', 'maxWidth': '250px', 'marginBottom': '20px'}),
@@ -206,8 +242,9 @@ def update_dashboard(color_mode, dep_selecionado, partido_selecionado, estado_se
             dff.loc[dff['deputado_id'] != dep_selecionado, 'opacity'] = 0.1 
             mask = dff['deputado_id'] == dep_selecionado
             dff.loc[mask, 'opacity'] = 1.0
-            dff.loc[mask, 'size'] = 15
-            dff.loc[mask, 'line_width'] = 2
+            
+            dff.loc[mask, 'size'] = 15 * fator_tamanho       
+            dff.loc[mask, 'line_width'] = 2 * fator_tamanho  
             dff.loc[mask, 'line_color'] = '#000000'
 
             row = df[df['deputado_id'] == dep_selecionado].iloc[0]
@@ -216,73 +253,29 @@ def update_dashboard(color_mode, dep_selecionado, partido_selecionado, estado_se
 
             card_content = dbc.Card([
                 dbc.Row([
-                    # Coluna da Imagem (Esquerda)
-                    dbc.Col(
-                        dbc.CardImg(
-                            src=row['deputado_urlFoto'],
-                            className="img-fluid rounded-start",
-                            style={
-                                'height': '100%', 
-                                'objectFit': 'contain', 
-                                'backgroundColor': '#f8f9fa',
-                                'maxHeight': '230px',
-                                'minHeight': '230px'
-                            }
-                        ),
-                        width=6,
-                        className="d-flex align-items-center justify-content-center bg-light p-0"
-                    ),
-                    
-                    # Coluna dos Dados (Direita)
-                    dbc.Col(
-                        dbc.CardBody([
+                    dbc.Col(dbc.CardImg(src=row['deputado_urlFoto'], className="img-fluid rounded-start", style={'height': '100%', 'objectFit': 'contain', 'backgroundColor': '#f8f9fa', 'maxHeight': '230px', 'minHeight': '230px'}), width=6, className="d-flex align-items-center justify-content-center bg-light p-0"),
+                    dbc.Col(dbc.CardBody([
                             html.H5(f"{row['deputado_nome']}", className="card-title mb-0", style={'fontSize': '1rem', 'fontWeight': 'bold'}),
                             html.P(f"{row['deputado_siglaPartido']} - {row['deputado_siglaUf']}", className="text-muted small mb-2"),
-                            
                             html.Hr(className="my-2"),
-                            
-                            html.Div([
-                            html.Span("Grupo:", className="small fw-bold d-block text-muted"), 
-                            
-                            html.Span(nome_tribo, style={'color': cor_tribo, 'fontWeight': 'bold', 'fontSize': '0.85rem'})
-                        ], className="mb-2"),
-                            
+                            html.Div([html.Span("Grupo:", className="small fw-bold d-block text-muted"), html.Span(nome_tribo, style={'color': cor_tribo, 'fontWeight': 'bold', 'fontSize': '0.85rem'})], className="mb-2"),
                             dbc.Row([
-                                dbc.Col([
-                                    html.Small("Economia", className="text-muted d-block", style={'fontSize': '0.75rem'}),
-                                    html.Span(f"{row['x_final']:.2f}", className="fw-bold", style={'fontSize': '1rem'}),
-                                ], width=6),
-                                dbc.Col([
-                                    html.Small("Outros temas", className="text-muted d-block", style={'fontSize': '0.75rem'}),
-                                    html.Span(f"{row['y_final']:.2f}", className="fw-bold", style={'fontSize': '1rem'}),
-                                ], width=6, className="text-center p-0"),
+                                dbc.Col([html.Small("Economia", className="text-muted d-block", style={'fontSize': '0.75rem'}), html.Span(f"{row['x_final']:.2f}", className="fw-bold", style={'fontSize': '1rem'})], width=6),
+                                dbc.Col([html.Small("Outros temas", className="text-muted d-block", style={'fontSize': '0.75rem'}), html.Span(f"{row['y_final']:.2f}", className="fw-bold", style={'fontSize': '1rem'})], width=6, className="text-center p-0"),
                             ], className="g-0")
-                            
-                        ], className="p-3"),
-                        width=6
-                    ),
+                        ], className="p-3"), width=6),
                 ], className="g-0 align-items-center") 
             ], className="shadow-lg border-primary fade-in", style={'overflow': 'hidden'})
 
-    # Montagem do gráfico
-    
     # Texto para hover
-    dff['hover_text'] = (
-        "<b>" + dff['deputado_nome'] + "</b> (" + dff['deputado_siglaPartido'] + "-" + dff['deputado_siglaUf'] + ")<br>" +
-        "Economia: " + dff['x_final'].map('{:,.2f}'.format) + "<br>" +
-        "Costumes/Outros: " + dff['y_final'].map('{:,.2f}'.format)
-    )
+    dff['hover_text'] = ("<b>" + dff['deputado_nome'] + "</b> (" + dff['deputado_siglaPartido'] + "-" + dff['deputado_siglaUf'] + ")<br>Economia: " + dff['x_final'].map('{:,.2f}'.format) + "<br>Costumes/Outros: " + dff['y_final'].map('{:,.2f}'.format))
 
     # Plotly base
     fig = px.scatter(
-        dff, x='x_final', y='y_final', color='legenda',
-        color_discrete_map=cores_mapa, hover_name=None, hover_data=None,
-        # Passando dados visuais via custom_data para persistir após agrupamento
-        custom_data=['deputado_id', 'hover_text', 'size', 'opacity', 'line_width', 'line_color'],
-        category_orders={'legenda': ORDEM_VISUAL_CLUSTERS}    
+        dff, x='x_final', y='y_final', color='legenda', color_discrete_map=cores_mapa, hover_name=None, hover_data=None,
+        custom_data=['deputado_id', 'hover_text', 'size', 'opacity', 'line_width', 'line_color'], category_orders={'legenda': ORDEM_VISUAL_CLUSTERS}    
     )
 
-    # Ajustes
     fig.update_traces(hovertemplate="%{customdata[1]}<extra></extra>", mode='markers')
 
     for trace in fig.data:
@@ -294,69 +287,39 @@ def update_dashboard(color_mode, dep_selecionado, partido_selecionado, estado_se
 
     data_list = list(fig.data)
     centrao_trace = None
-    
-    # Ordem da legenda
     for trace in data_list:
-        if trace.name in ORDEM_VISUAL_CLUSTERS:
-            trace.legendrank = ORDEM_VISUAL_CLUSTERS.index(trace.name)
-        
-        if trace.name == 'Centrão Governista':
-            centrao_trace = trace
-
+        if trace.name in ORDEM_VISUAL_CLUSTERS: trace.legendrank = ORDEM_VISUAL_CLUSTERS.index(trace.name)
+        if trace.name == 'Centrão Governista': centrao_trace = trace
     if centrao_trace:
         data_list.remove(centrao_trace) 
         data_list.append(centrao_trace) 
-        
     fig.data = tuple(data_list)
 
-    # Layout do gráfico
-
+    # Layout responsivo
     fig.update_xaxes(range=[-12.5, 12.5], autorange=False, zeroline=False, showgrid=False, showticklabels=False, title="")
-    fig.update_yaxes(range=[-12.5, 12.5], autorange=False, zeroline=False, showgrid=False, showticklabels=False, title="")
+    fig.update_yaxes(range=[-12.5, 12.5], autorange=False, zeroline=False, showgrid=False, showticklabels=False, title="",
+                     scaleanchor="x" if travar_quadrado else None, scaleratio=1 if travar_quadrado else None)
 
     fig.update_layout(
-        uirevision='locked',
-        template='plotly_white',
-        margin=dict(l=20, r=20, t=20, b=20),
-        dragmode='pan',     
-        modebar=dict(
-            orientation='v', 
-            bgcolor='rgba(255,255,255,0.7)',
-            remove=['lasso2d', 'select2d', 'autoScale2d', 'hoverClosestCartesian', 
-                    'hoverCompareCartesian', 'toImage', 'zoomIn2d', 'zoomOut2d', 'toggleSpikelines']
-        ),
-        
+        uirevision='locked', template='plotly_white', paper_bgcolor='white', plot_bgcolor='white',
+        margin=dict(l=20, r=20, t=20, b=20), dragmode='pan',     
+        modebar=dict(orientation='v', bgcolor='#FFFFFF', remove=['lasso2d', 'select2d', 'autoScale2d', 'hoverClosestCartesian', 'hoverCompareCartesian', 'toImage', 'zoomIn2d', 'zoomOut2d', 'toggleSpikelines']),
         legend=dict(
-            orientation="v",
-            yanchor="bottom", 
-            y=0, 
-            xanchor="right", 
-            x=0.99,
-            bgcolor="rgba(255,255,255,0.95)",
-            bordercolor="#ddd", 
-            borderwidth=1, 
-            title_text="",
-            itemsizing='constant',
-            font=dict(size=11)
-        ),
-        
-       
+            orientation="v", yanchor="bottom", y=0, xanchor="right", x=0.99,
+            bgcolor="#FFFFFF", bordercolor="#ddd", borderwidth=1, title_text="", itemsizing='constant', font=dict(size=fonte_legenda)
+        ) 
     )
 
-    # Linhas Centrais
     fig.add_hline(y=0, line_width=1.5, line_dash="solid", line_color="#ddd", layer="below")
     fig.add_vline(x=0, line_width=1.5, line_dash="solid", line_color="#ddd", layer="below")
 
-    # Anotações
-    font_annot = dict(size=14, weight="bold")
-    fig.add_annotation(xref="paper", yref="y", x=0.01, y=-1.8, text="← ESQUERDA", showarrow=False, xanchor="left", font=dict(color="#CE3942", **font_annot))
-    fig.add_annotation(xref="paper", yref="y", x=0.99, y=1.8, text="LIBERAL →", showarrow=False, xanchor="right", font=dict(color="#418ACB", **font_annot))
-    fig.add_annotation(xref="x", yref="paper", x=2.4, y=0.99, text="CONSERVADOR ↑", showarrow=False, yanchor="top", font=dict(color="#3E01A4", **font_annot))
-    fig.add_annotation(xref="x", yref="paper", x=-2.4, y=0.01, text="PROGRESSISTA ↓", showarrow=False, yanchor="bottom", font=dict(color="#F7C71C", **font_annot))
-    
-    # Rótulos dos eixos e mensagem de dados atualizados
-    fig.add_annotation(x=6, y=-0.6, text="↔ Economia", showarrow=False, font=dict(size=12, color="#ccc"))
-    fig.add_annotation(x=0.3, y=-8, text="Costumes/Outros ↔", textangle=-90, showarrow=False, font=dict(size=12, color="#ccc"))
-    fig.add_annotation(x=-10, y=-12.5, text="Dados atualizados até 01/02/2026", showarrow=False, font=dict(size=10, color="#ccc"))
+    fig.add_scatter(x=[6], y=[-0.6], text=["↔ Economia"], mode="text", textposition="middle center", textfont=dict(size=max(8, fonte_anotacoes-2), color="#ccc"), showlegend=False, hoverinfo="skip")
+    fig.add_annotation(x=0.3, y=-8, text="Costumes/Outros ↔", textangle=-90, showarrow=False, font=dict(size=max(8, fonte_anotacoes-2), color="#ccc"))
+    fig.add_scatter(x=[-9], y=[-12], text=["Dados atualizados até 01/02/2026"], mode="text", textposition="middle center", textfont=dict(size=max(8, fonte_anotacoes-4), color="#ccc"), showlegend=False, hoverinfo="skip")
 
+    fig.add_scatter(x=[-12], y=[-1.8], text=["<b>← ESQUERDA</b>"], mode="text", textposition="middle right", textfont=dict(size=fonte_anotacoes, color="#CE3942"), showlegend=False, hoverinfo="skip")
+    fig.add_scatter(x=[12], y=[1.8], text=["<b>LIBERAL →</b>"], mode="text", textposition="middle left", textfont=dict(size=fonte_anotacoes, color="#418ACB"), showlegend=False, hoverinfo="skip")
+    fig.add_scatter(x=[2.4], y=[12], text=["<b>CONSERVADOR ↑</b>"], mode="text", textposition="bottom center", textfont=dict(size=fonte_anotacoes, color="#3E01A4"), showlegend=False, hoverinfo="skip")
+    fig.add_scatter(x=[-2.4], y=[-12], text=["<b>PROGRESSISTA ↓</b>"], mode="text", textposition="top center", textfont=dict(size=fonte_anotacoes, color="#F7C71C"), showlegend=False, hoverinfo="skip")
+    
     return fig, card_content, dep_selecionado, partido_selecionado, estado_selecionado

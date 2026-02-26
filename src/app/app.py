@@ -25,10 +25,31 @@ app = dash.Dash(
 )
 server = app.server
 
+# Blindagem contra tradutor
+app.index_string = '''
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        {%metas%}
+        <title>{%title%}</title>
+        {%favicon%}
+        {%css%}
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>
+'''
+
 # Componentes da barra de navegação
 navbar = dbc.NavbarSimple(
     children=[
-        dbc.NavItem(dbc.NavLink("Home", href="/", id="nav-home")),
+        dbc.NavItem(dbc.NavLink("Início", href="/", id="nav-home")),
         dbc.NavItem(dbc.NavLink("Como Funciona", href="/como-funciona", id="nav-como-funciona")),
         dbc.NavItem(dbc.NavLink("Descobertas", href="/descobertas", id="nav-descobertas")),
         dbc.NavItem(dbc.NavLink("Metodologia", href="/metodologia", id="nav-metodologia")),
