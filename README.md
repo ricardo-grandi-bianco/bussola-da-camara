@@ -1,3 +1,84 @@
+*Português [disponível abaixo].*
+*English version:*
+
+---
+
+# Brazilian House Compass (Bússola da Câmara) - Technical Documentation
+
+The **Brazilian House Compass** is an interactive analytical application that maps the legislative behavior of Brazilian House Representatives onto a two-dimensional ideological Cartesian plane.
+
+This repository hosts the complete data pipeline (ETL), scoring models, unsupervised clustering algorithms, and the source code for the dashboard built with Dash/Plotly.
+
+While the project's Methodology page explains the core concepts, this document deep-dives into the technical architecture, mathematical choices, and statistical justifications.
+
+## Data Pipeline & Architecture (ETL)
+
+The pipeline was designed to be modular, reproducible, and efficient, leveraging a `.parquet` file architecture to ensure high performance when handling high-dimensional voting data. Classification spreadsheets were maintained in `.xlsx` format to facilitate manual labeling via graphical interfaces.
+
+The logical flow is divided into the following stages located in the `etl/` directory:
+
+* **Extraction (`extracao_votacoes.R`)**: An R script consuming the official House of Representatives Open Data API. It retrieves all roll-call votes from a given year, filtering for non-unanimous floor votes.
+* **Thematic Classification (`votacoes_classificadas.py`)**: Consolidates bill labeling into axes (Economy or Social Issues) and directions (Left/Right, Progressive/Conservative, Unclassifiable, or Moderate) following manual review.
+* **Transformation & Wrangling (`matriz_votacoes.py`)**: A Python script that pivots individual lawmaker votes with classified bill data, creating a **sparse matrix** where rows represent representatives and columns represent specific votes. Invalid votes (abstentions, absences) are treated as `NaN`, "Yes" as 1, and "No/Obstruction" as -1. A 40% minimum participation threshold is strictly enforced.
+* **Modeling & Clustering (`scores_e_k-means.py`)**: The analytical core. It applies dissidence-based weighting, calculates final scores, and executes the clustering algorithm on the voting matrix.
+
+## Mathematical Scoring Model (Dissidence-Weighted Score)
+
+A lawmaker’s position on the X-axis (Economy) and Y-axis (Social Issues) is not a simple average of "Yes" or "No" votes. It is derived from a **weighted-by-scarcity (dissidence)** model.
+
+The statistical and political premise is that voting with a large majority requires less ideological conviction than casting a minority vote. Therefore, the absolute weight of a vote on any given bill is inversely proportional to the House's overall adherence to that position.
+
+The base formula applied is:
+$$Weight = (1 - w) \times 10$$
+*Where **w** is the proportion of votes in a specific direction.*
+
+**Practical Example:** In a vote classified as "Left," if 90% of the quorum votes "Yes" and 10% votes "No":
+* A **"Yes" vote (consensus)** receives a light weight: $(1 - 0.90) \times 10 = 1$. The lawmaker moves slightly to the left (-1).
+* A **"No" vote (libertarian/right dissent)** receives a heavy weight: $(1 - 0.10) \times 10 = 9$. The lawmaker moves strongly to the right (+9).
+
+### Post-Processing for "Moderate" (M) Bills
+
+For bills classified as Moderate, the algorithm performs a centrality analysis, isolating "Yes" and "No" groups to evaluate their baseline absolute scores. The group with the lowest absolute average is identified as the "center," while the other represents the "poles":
+* Votes aligned with the **center** receive a score of 0.
+* Votes aligned with the **poles** receive a score proportional to that group's scarcity, with the sign determined by the identified pole (+ for right, - for left).
+
+Finally, scores are normalized using the ratio $10 / max\_absolute$ for each axis, ensuring the visualization symmetrically fills the $[-10, 10]$ Cartesian plane.
+
+## Unsupervised Clustering (K-Means++)
+
+To group representatives based on their voting patterns, the **K-Means** algorithm was applied to the full voting matrix.
+
+Instead of standard random initialization, the `init='k-means++'` parameter was utilized. This technique spreads initial centroids as far apart as possible before iterations begin, dramatically accelerating convergence and preventing the model from getting stuck in suboptimal local optima. A fixed seed was defined to ensure reproducibility.
+
+### The Choice of K=7: A Statistical and Political Trade-off
+
+Defining the optimal number of clusters ($K$) involved rigorous statistical analysis combined with Political Science domain expertise:
+
+* **Inertia (Elbow Method)**: Initial tests showed a clear break at $K=3$. However, politically, dividing the House into only "Left, Center, and Right" is analytically poor and fails to capture the complexity of the brazilian "Centrão" — a group of representatives that do not have a specific or consistent ideological orientation and aim at ensuring proximity to the executive branch in order to guarantee advantages.
+* **Silhouette Score**: The coefficient indicated robust mathematical optimization at $K=5$. Yet, qualitative cross-referencing revealed that $K=5$ merged distinct voting profiles into single groups.
+* **The Optimal Point (K=7)**: At $K=7$, we observed a positive backlash in the Silhouette Score (improvement over $K=6$) and significantly lower inertia. Qualitatively, $K=7$ provided the best explanatory power, accurately isolating distinct legislative blocs. Models with $K > 7$ showed sharp declines in silhouette and excessive fragmentation without explanatory gain.
+
+## Application Framework (Dash Frontend)
+
+The interactive frontend was built in Python using **Dash**, with components from `dash-bootstrap-components` and `plotly`. To ensure a seamless user experience, strict **camera-state preservation** (Zoom/Pan) logic was implemented, ensuring that dropdown filters do not disrupt the user's free navigation across the Cartesian plane.
+
+## License & Citation
+
+This project is licensed under the MIT License. You are free to use the code and methodology for your own studies or applications.
+
+When using this material or citing its data in academic works, journalistic texts, or other media, please credit the author:
+
+**BibTeX Format:**
+```bibtex
+@misc{bussolacamara2026,
+  author = {Bianco, Ricardo Grandi},
+  title = {Brazilian House Compass (Bússola da Câmara): Ideological Mapping of Brazilian Federal Representatives},
+  year = {2026},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{[https://github.com/ricardo-grandi-bianco/bussola-da-camara](https://github.com/ricardo-grandi-bianco/bussola-da-camara)}}
+}
+```
 # Bússola da Câmara - Documentação Técnica
 
 A Bússola da Câmara é uma aplicação analítica interativa que mapeia o comportamento legislativo dos deputados federais brasileiros em um plano cartesiano ideológico bidimensional.
@@ -68,9 +149,10 @@ Ao utilizar este material ou citar seus dados em trabalhos acadêmicos, textos j
 ```bibtex
 @misc{bussolacamara2026,
   author = {Bianco, Ricardo Grandi},
-  title = {Bússola da Câmara: Mapeamento Ideológico dos Deputados Federais},
+  title = {Brazilian House Compass (Bússola da Câmara): Ideological Mapping of Brazilian Federal Representatives},
   year = {2026},
   publisher = {GitHub},
   journal = {GitHub repository},
   howpublished = {\url{[https://github.com/ricardo-grandi-bianco/bussola-da-camara](https://github.com/ricardo-grandi-bianco/bussola-da-camara)}}
 }
+```
