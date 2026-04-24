@@ -5,7 +5,7 @@
 
 # Brazilian House Compass (Bússola da Câmara) - Technical Documentation
 
-The **Brazilian House Compass** is an interactive analytical application that maps the legislative behavior of Brazilian House Representatives onto a two-dimensional ideological Cartesian plane.
+The [**Brazilian House Compass**](https://bussola-da-camara-435690616398.us-central1.run.app/) is an interactive analytical application that maps the legislative behavior of Brazilian House Representatives onto a two-dimensional ideological Cartesian plane.
 
 This repository hosts the complete data pipeline (ETL), scoring models, unsupervised clustering algorithms, and the source code for the dashboard built with Dash/Plotly.
 
@@ -81,7 +81,7 @@ When using this material or citing its data in academic works, journalistic text
 ```
 # Bússola da Câmara - Documentação Técnica
 
-A Bússola da Câmara é uma aplicação analítica interativa que mapeia o comportamento legislativo dos deputados federais brasileiros em um plano cartesiano ideológico bidimensional.
+A [**Bússola da Câmara**](https://bussola-da-camara-435690616398.us-central1.run.app/) é uma aplicação analítica interativa que mapeia o comportamento legislativo dos deputados federais brasileiros em um plano cartesiano ideológico bidimensional.
 
 Este repositório contém todo o pipeline de dados (ETL), os modelos de cálculo de scores, o algoritmo de clusterização não supervisionada e o código-fonte do dashboard construído em Dash/Plotly.
 
