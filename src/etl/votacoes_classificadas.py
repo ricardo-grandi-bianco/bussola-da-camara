@@ -29,6 +29,7 @@ if ARQUIVO_EXCEL_2026.exists():
     # Upsert
     df_full = pd.concat([df_historico, df_novos], ignore_index=True)
     df_final = df_full.drop_duplicates(subset='id', keep='last')
+    df_final['data'] = pd.to_datetime(df_final['data'], dayfirst=True)
 
     if 'data' in df_final.columns:
         df_final = df_final.sort_values('data', ascending=False)
