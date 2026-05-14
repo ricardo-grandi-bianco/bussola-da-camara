@@ -15,22 +15,42 @@ dados2023 = "http://dadosabertos.camara.leg.br/arquivos/votacoesVotos/csv/votaco
 dados2024 = "http://dadosabertos.camara.leg.br/arquivos/votacoesVotos/csv/votacoesVotos-2024.csv"
 dados2025 = "http://dadosabertos.camara.leg.br/arquivos/votacoesVotos/csv/votacoesVotos-2025.csv"
 dados2026 = "http://dadosabertos.camara.leg.br/arquivos/votacoesVotos/csv/votacoesVotos-2026.csv"
-df2023 = pd.read_csv(dados2023, sep = ";", encoding = "latin1")
-df2024 = pd.read_csv(dados2024, sep = ";", encoding = "latin1")
-df2025 = pd.read_csv(dados2025, sep = ";", encoding = "latin1")
-df2026 = pd.read_csv(dados2026, sep = ";", encoding = "latin1")
 
-# Unindo os dfs e excluindo colunas irrelevantes
-df_bruto = pd.concat([df2023, df2024, df2025, df2026])
-df_bruto = df_bruto.drop(columns=['uriVotacao','dataHoraVoto', 'deputado_uri', 'deputado_uriPartido', 'deputado_idLegislatura'])
+df2023 = pd.read_csv(dados2023, sep=";", encoding="utf-8-sig")
+df2024 = pd.read_csv(dados2024, sep=";", encoding="utf-8-sig")
+df2025 = pd.read_csv(dados2025, sep=";", encoding="utf-8-sig")
+df2026 = pd.read_csv(dados2026, sep=";", encoding="utf-8-sig")
+
+def limpar_nome_colunas(df):
+    df.columns = [str(c).replace('ï»¿', '').replace('"', '').strip() for c in df.columns]
+    return df
+
+df2023 = limpar_nome_colunas(df2023)
+df2024 = limpar_nome_colunas(df2024)
+df2025 = limpar_nome_colunas(df2025)
+df2026 = limpar_nome_colunas(df2026)
+
+# Unindo os dfs
+df_bruto = pd.concat([df2023, df2024, df2025, df2026], ignore_index=True)
+
+# Tratamento preliminar de IDs
+df_bruto['idVotacao'] = df_bruto['idVotacao'].astype(str).str.strip()
+df_bruto = df_bruto.rename(columns={'idVotacao': 'id_votacao'})
+
+# 1. Extraindo os metadados mais recentes de cada deputado
+df_bruto['dataHoraVoto'] = pd.to_datetime(df_bruto['dataHoraVoto'], errors='coerce')
+df_bruto = df_bruto.sort_values('dataHoraVoto')
+
+colunas_info = ['deputado_id', 'deputado_nome', 'deputado_siglaPartido', 'deputado_siglaUf', 'deputado_urlFoto']
+df_metadata = df_bruto.drop_duplicates(subset=['deputado_id'], keep='last')[colunas_info]
+
+# Excluindo colunas irrelevantes e os metadados do df de votos (para não fracionar no pivot)
+colunas_excluir = ['uriVotacao', 'dataHoraVoto', 'deputado_uri', 'deputado_uriPartido', 'deputado_idLegislatura', 'deputado_nome', 'deputado_siglaPartido', 'deputado_siglaUf', 'deputado_urlFoto']
+df_bruto = df_bruto.drop(columns=[col for col in colunas_excluir if col in df_bruto.columns])
 
 # Baixando votações classificadas
 df_class = pd.read_parquet(DATA_PROCESSED / "Votações Classificadas.parquet")
-
-# Tratamento preliminar
-df_bruto = df_bruto.rename(columns={'ï»¿"idVotacao"': 'id_votacao'}) 
-df_class['id'] = df_class['id'].astype(str)
-df_bruto['id_votacao'] = df_bruto['id_votacao'].astype(str)
+df_class['id'] = df_class['id'].astype(str).str.strip()
 
 # Mantendo no df_bruto apenas as votações já classificadas
 ids_classificados = df_class['id'].unique()
@@ -38,12 +58,15 @@ df_bruto_filtrado = df_bruto[df_bruto['id_votacao'].isin(ids_classificados)]
 
 # Pivotagem
 df_votos = df_bruto_filtrado.pivot_table(
-    index=['deputado_id', 'deputado_nome', 'deputado_siglaPartido', 'deputado_siglaUf', 'deputado_urlFoto'],
+    index='deputado_id',
     columns='id_votacao',
     values='voto',
     aggfunc='first'
 ).reset_index()
 df_votos.columns.name = None
+
+# Devolvendo as informações atualizadas para a matriz consolidada
+df_votos = pd.merge(df_metadata, df_votos, on='deputado_id', how='inner')
 
 # Transformando os votos em dados numéricos (lidando com erros de encoding, quando necessário)
 mapa_votos = {
