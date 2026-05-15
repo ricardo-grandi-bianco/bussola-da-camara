@@ -21,6 +21,10 @@ Para garantir a confiabilidade das informações, operamos com transparência ab
 
 Somos uma equipe independente, sem filiação partidária ou vínculo com grupos políticos. Mais do que isso, somos plurais. O grupo é composto por estudantes com visões de mundo distintas, incluindo membros de esquerda, centro e direita unidos pelo rigor jornalístico. Nossa metodologia combina Ciência Política, matemática e análise de dados para entregar um retrato fiel e imparcial do debate legislativo, empoderando o eleitor com informação de qualidade.
 
+### Acesse aqui nosso [Instagram](https://www.instagram.com/bussoladacamara/)!    
+                         
+&nbsp;              
+                          
 ### Nossa Equipe
 
 **Coordenação Geral e Desenvolvimento: Ricardo Grandi Bianco** ([LinkedIn](https://www.linkedin.com/in/ricardo-grandi-bianco-897b3a180/))
@@ -31,11 +35,16 @@ Idealização do projeto e da metodologia. Responsável pela liderança da equip
 
 Criação da marca, idealização da identidade visual e da interface do usuário (UI/UX).
 
-**Relações Públicas e Institucionais: Felipe Ockner** ([LinkedIn](https://www.linkedin.com/in/felipe-ockner-352420267/))
+**Relações Públicas e Institucionais:** 
+* **Felipe Ockner** ([LinkedIn](https://www.linkedin.com/in/felipe-ockner-352420267/))
+* **Matheus Roviezzo** ([LinkedIn](https://www.linkedin.com/in/matheus-roviezzo-11081928a/))
 
-Responsável pela divulgação estratégica, pelos relatórios acadêmicos de extensão e pelo relacionamento com stakeholders.
+Responsáveis pela divulgação estratégica, pelos relatórios acadêmicos de extensão e pelo relacionamento com stakeholders.
 
-**Social Media e Conteúdo: Evelyn Dantas** ([LinkedIn](https://www.linkedin.com/in/evelyn-dantas-gomes-ferreira?utm_source=share_via&utm_content=profile&utm_medium=member_ios))
+**Social Media e Conteúdo:** 
+* **Evelyn Dantas** ([LinkedIn](https://www.linkedin.com/in/evelyn-dantas-gomes-ferreira?utm_source=share_via&utm_content=profile&utm_medium=member_ios))
+* **Gustavo Calmon** ([LinkedIn](https://www.linkedin.com/in/gustavo-calmon/))
+* **Lucas Tinoco** ([LinkedIn](https://www.linkedin.com/in/lucas-l-tinoco-47a88a250/))                      
 
 Gestão das redes sociais e criação de conteúdo digital para engajamento do público.
 

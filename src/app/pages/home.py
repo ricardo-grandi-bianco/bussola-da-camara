@@ -21,23 +21,23 @@ except:
 
 # Mapeamento de Cores
 CORES_CLUSTER = {
-    '0': '#17ea39', '1': '#1ebfec', '2': '#A7194B', '3': '#e7c2c0',
-    '4': '#FFCD00', '5': '#FE2712', '6': '#3E01A4'
+    '0': '#FFCD00', '1': '#17ea39', '2': '#e7c2c0', '3': '#1ebfec',
+    '4': '#3E01A4', '5': '#FE2712', '6': '#A7194B'
 }
 
 NOMES_CLUSTER = {
-    '0': 'Oposição Conservadora', '1': 'Centro Eclético', '2': 'Esquerda Ideológica',
-    '3': 'Centrão Governista', '4': 'Progressistas Independentes',
-    '5': 'Esquerda Governista', '6': 'Direita Tradicional'
+    '0': 'Progressistas Independentes', '1': 'Oposição Conservadora', '2': 'Centrão Governista',
+    '3': 'Centro Eclético', '4': 'Direita Tradicional',
+    '5': 'Esquerda Governista', '6': 'Esquerda Ideológica'
 }
 
 CORES_PARTIDO = {
-    'PT': '#CE3942', 'PV': '#CE3942', 'PCdoB': '#CE3942', 'PL': '#295AA5',
-    'PSOL': '#4C0E71', 'REDE': '#4C0E71', 'UNIAO':'#33BFEF',
-    'PP': '#72BADE', 'PSD': '#F5CF27', 'MDB': '#6AC54E',
+    'PT': "#DA2A35", 'PV': '#DA2A35', 'PCdoB': '#DA2A35', 'PL': '#295AA5',
+    'PSOL': '#4C0E71', 'REDE': '#4C0E71', 'UNIAO':'#33BFEF', 'UNIÃO': '#33BFEF',
+    'PP': '#33BFEF', 'PSD': "#F6F625", 'MDB': "#ABDF57",
     'PSDB': '#2A15D2', 'CIDADANIA': '#2A15D2', 'PRD': '#2B8552', 'SOLIDARIEDADE': '#2B8552',
-    'NOVO': '#EB732A', 'PDT': '#D82355', 'AVANTE': '#DE683C',
-    'PODE': '#4CAF35', 'PSB': '#FFC600', 'REPUBLICANOS': "#FFFFFF"
+    'NOVO': "#FB8034", 'PDT': "#FA4F7F", 'AVANTE': "#BA5C3A",
+    'PODE': "#5AD83E", 'PSB': "#FFB700", 'REPUBLICANOS': "#FFFFFF", 'MISSÃO':"#000000"
 }
 COR_PARTIDO_DEFAULT = '#999999'
 
@@ -61,7 +61,9 @@ MAPA_FEDERACOES = {
     # Federação PSDB-Cidadania
     'PSDB': 'PSDB/CIDADANIA', 'CIDADANIA': 'PSDB/CIDADANIA',
     # Federação PRD-Solidariedade
-    'PRD': 'PRD/SOLIDARIEDADE', 'SOLIDARIEDADE': 'PRD/SOLIDARIEDADE'
+    'PRD': 'PRD/SOLIDARIEDADE', 'SOLIDARIEDADE': 'PRD/SOLIDARIEDADE',
+    # Federação PP-UNIAO
+    'PP': 'PP/UNIAO', 'UNIAO': 'PP/UNIAO' 
 }
 
 # Tratamento inicial dos dados
@@ -69,12 +71,8 @@ if not df.empty:
     df['cluster'] = df['cluster'].astype(str)
     df['deputado_siglaPartido'] = df['deputado_siglaPartido'].astype(str).str.strip()
     df['deputado_siglaPartido'] = df['deputado_siglaPartido'].apply(lambda x: 'UNIAO' if 'UNI' in x else x)
-    mudancas_partido = {
-        'Tiririca': 'PSD',
-        'Luiz Lima': 'NOVO'
-    }
-    for deputado, novo_partido in mudancas_partido.items():
-        df.loc[df['deputado_nome'] == deputado, 'deputado_siglaPartido'] = novo_partido
+    
+    # Cria a coluna label_busca "on the fly" para o dropdown
     df['label_busca'] = df['deputado_nome'] + ' (' + df['deputado_siglaPartido'] + '-' + df['deputado_siglaUf'] + ')'
 
 # Geração de listas para os filtros
@@ -217,7 +215,13 @@ def update_dashboard(color_mode, dep_selecionado, partido_selecionado, estado_se
     if color_mode == 'partido':
         dff['legenda'] = dff['deputado_siglaPartido'].replace(MAPA_FEDERACOES)
         cores_mapa = CORES_PARTIDO.copy()
-        cores_mapa.update({'PT/PV/PCdoB': CORES_PARTIDO['PT'], 'PSOL/REDE': CORES_PARTIDO['PSOL'], 'PSDB/CIDADANIA': CORES_PARTIDO['PSDB'], 'PRD/SOLIDARIEDADE': CORES_PARTIDO['PRD']})
+        cores_mapa.update({
+            'PT/PV/PCdoB': CORES_PARTIDO['PT'], 
+            'PSOL/REDE': CORES_PARTIDO['PSOL'], 
+            'PSDB/CIDADANIA': CORES_PARTIDO['PSDB'], 
+            'PRD/SOLIDARIEDADE': CORES_PARTIDO['PRD'],
+            'PP/UNIAO': CORES_PARTIDO['UNIAO']
+        })
         dff['cor_final'] = dff['deputado_siglaPartido'].map(CORES_PARTIDO).fillna(COR_PARTIDO_DEFAULT)
     else:
         dff['cor_final'] = dff['cluster'].map(CORES_CLUSTER)
@@ -286,14 +290,28 @@ def update_dashboard(color_mode, dep_selecionado, partido_selecionado, estado_se
             trace.marker.line.color = trace.customdata[:, 5]
 
     data_list = list(fig.data)
-    centrao_trace = None
-    for trace in data_list:
-        if trace.name in ORDEM_VISUAL_CLUSTERS: trace.legendrank = ORDEM_VISUAL_CLUSTERS.index(trace.name)
-        if trace.name == 'Centrão Governista': centrao_trace = trace
-    if centrao_trace:
-        data_list.remove(centrao_trace) 
-        data_list.append(centrao_trace) 
-    fig.data = tuple(data_list)
+    
+    if color_mode == 'cluster':
+        traces_ordenados = []
+       
+        for nome_cluster in ORDEM_VISUAL_CLUSTERS:
+            if nome_cluster not in ['Esquerda Governista', 'Centrão Governista']:
+                for trace in data_list:
+                    if trace.name == nome_cluster:
+                        trace.legendrank = ORDEM_VISUAL_CLUSTERS.index(trace.name)
+                        traces_ordenados.append(trace)
+
+        esq_gov_trace = next((t for t in data_list if t.name == 'Esquerda Governista'), None)
+        if esq_gov_trace:
+            esq_gov_trace.legendrank = ORDEM_VISUAL_CLUSTERS.index('Esquerda Governista')
+            traces_ordenados.append(esq_gov_trace)
+
+        centrao_trace = next((t for t in data_list if t.name == 'Centrão Governista'), None)
+        if centrao_trace:
+            centrao_trace.legendrank = ORDEM_VISUAL_CLUSTERS.index('Centrão Governista')
+            traces_ordenados.append(centrao_trace)
+            
+        fig.data = tuple(traces_ordenados)
 
     # Layout responsivo
     fig.update_xaxes(range=[-12.5, 12.5], autorange=False, zeroline=False, showgrid=False, showticklabels=False, title="")
@@ -315,7 +333,7 @@ def update_dashboard(color_mode, dep_selecionado, partido_selecionado, estado_se
 
     fig.add_scatter(x=[6], y=[-0.6], text=["↔ Economia"], mode="text", textposition="middle center", textfont=dict(size=max(8, fonte_anotacoes-2), color="#ccc"), showlegend=False, hoverinfo="skip")
     fig.add_annotation(x=0.3, y=-8, text="Costumes/Outros ↔", textangle=-90, showarrow=False, font=dict(size=max(8, fonte_anotacoes-2), color="#ccc"))
-    fig.add_scatter(x=[-9], y=[-12], text=["Dados atualizados até 01/02/2026"], mode="text", textposition="middle center", textfont=dict(size=max(8, fonte_anotacoes-4), color="#ccc"), showlegend=False, hoverinfo="skip")
+    fig.add_scatter(x=[-9], y=[-12], text=["Dados atualizados até 13/05/2026"], mode="text", textposition="middle center", textfont=dict(size=max(8, fonte_anotacoes-4), color="#ccc"), showlegend=False, hoverinfo="skip")
 
     fig.add_scatter(x=[-12], y=[-1.8], text=["<b>← ESQUERDA</b>"], mode="text", textposition="middle right", textfont=dict(size=fonte_anotacoes, color="#CE3942"), showlegend=False, hoverinfo="skip")
     fig.add_scatter(x=[12], y=[1.8], text=["<b>LIBERAL →</b>"], mode="text", textposition="middle left", textfont=dict(size=fonte_anotacoes, color="#418ACB"), showlegend=False, hoverinfo="skip")
