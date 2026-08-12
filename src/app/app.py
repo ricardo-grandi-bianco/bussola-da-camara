@@ -25,11 +25,21 @@ app = dash.Dash(
 )
 server = app.server
 
-# Blindagem contra tradutor
+# Blindagem contra tradutor e Injeção do Google Analytics
 app.index_string = '''
 <!DOCTYPE html>
 <html lang="pt-BR">
     <head>
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-STK0YG0WZL"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+
+          gtag('config', 'G-STK0YG0WZL');
+        </script>
+        
         {%metas%}
         <title>{%title%}</title>
         {%favicon%}
